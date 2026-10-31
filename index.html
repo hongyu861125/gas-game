@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>國小自然科學探究：燃燒與氣體互動實驗室</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter & Noto Sans TC -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        
+        /* Custom animations & keyframes */
+        @keyframes pulseGlowO2 {
+            0%, 100% { box-shadow: 0 0 15px rgba(245, 158, 11, 0.4), inset 0 0 15px rgba(245, 158, 11, 0.2); }
+            50% { box-shadow: 0 0 35px rgba(245, 158, 11, 0.8), inset 0 0 25px rgba(245, 158, 11, 0.4); }
+        }
+
+        @keyframes pulseGlowCO2 {
+            0%, 100% { box-shadow: 0 0 15px rgba(236, 72, 153, 0.3), inset 0 0 15px rgba(236, 72, 153, 0.15); }
+            50% { box-shadow: 0 0 30px rgba(236, 72, 153, 0.6), inset 0 0 20px rgba(236, 72, 153, 0.3); }
+        }
+
+        .glow-o2 { animation: pulseGlowO2 2s infinite ease-in-out; }
+        .glow-co2 { animation: pulseGlowCO2 2s infinite ease-in-out; }
+
+        @keyframes riseBubble {
+            0% { transform: translateY(0) scale(0.8); opacity: 0.8; }
+            100% { transform: translateY(-70px) scale(1.2); opacity: 0; }
+        }
+
+        .bubble {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.75);
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.9);
+            animation: riseBubble 1.2s infinite ease-in;
+            pointer-events: none;
+        }
+
+        @keyframes smokeRise {
+            0% { transform: translate(-50%, 0) scale(0.5); opacity: 0.8; }
+            100% { transform: translate(-60%, -40px) scale(2.2); opacity: 0; }
+        }
+
+        .smoke-particle {
+            position: absolute;
+            background: rgba(200, 200, 200, 0.6);
+            border-radius: 50%;
+            animation: smokeRise 1.5s infinite ease-out;
+            pointer-events: none;
+            filter: blur(2px);
+        }
+
+        /* Glass jar specular highlight */
+        .glass-jar {
+            background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(240,249,255,0.1) 40%, rgba(224,242,254,0.3) 100%);
+            box-shadow: inset -5px -5px 15px rgba(0,0,0,0.05), inset 5px 5px 15px rgba(255,255,255,0.8), 0 10px 25px -5px rgba(14, 165, 233, 0.15);
+            backdrop-filter: blur(1px);
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 8px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 8px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- TOP HEADER & CONTROLS -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col md:flex-row items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-sky-200">
+                    <i class="fa-solid fa-flask-vial text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-black text-slate-800 tracking-tight flex items-center gap-2">
+                        國小自然科學探究：燃燒與氣體互動實驗室
+                        <span class="text-xs px-2 py-0.5 bg-sky-100 text-sky-700 font-bold rounded-full border border-sky-200">互動數位版</span>
+                    </h1>
+                    <p class="text-xs text-slate-500">探究小蘇打、雙氧水與氣體產生對燃燒現象之影響</p>
+                </div>
+            </div>
+
+            <!-- Global Action Controls -->
+            <div class="flex items-center gap-2.5 flex-wrap">
+                <!-- Microscopic Toggle -->
+                <button id="toggle-micro-btn" onclick="toggleMicroView()" class="px-3.5 py-1.5 rounded-xl border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm">
+                    <i class="fa-solid fa-microscope text-indigo-600"></i>
+                    <span id="micro-btn-text">🔬 開啟微觀粒子視角</span>
+                </button>
+
+                <!-- Wash Jar Button -->
+                <button onclick="washJar()" class="px-3.5 py-1.5 rounded-xl border border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-100 font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm">
+                    <i class="fa-solid fa-soap text-sky-500"></i>
+                    🧼 清洗廣口瓶
+                </button>
+
+                <!-- Reset Lab Button -->
+                <button onclick="resetLab()" class="px-3.5 py-1.5 rounded-xl border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100 font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm">
+                    <i class="fa-solid fa-rotate-left text-rose-500"></i>
+                    🔄 重製實驗室
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN WORKSPACE CONTAINER -->
+    <main class="max-w-7xl mx-auto w-full px-4 py-4 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-5">
+
+        <!-- COLUMN 1: Reagents & Tools Inventory (3 Cols) -->
+        <section class="lg:col-span-3 flex flex-col gap-4">
+            
+            <!-- Chemical Reagents Card -->
+            <div class="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm">
+                <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                    <i class="fa-solid fa-boxes-stacked text-sky-500"></i> 化學藥品區 (點擊加入)
+                </h2>
+                <div class="grid grid-cols-1 gap-2 text-xs">
+                    <button onclick="addReagent('vinegar')" class="p-2.5 rounded-xl border border-slate-200 bg-amber-50/50 hover:bg-amber-100/60 hover:border-amber-300 transition-all flex items-center gap-3 group text-left">
+                        <div class="w-8 h-8 rounded-lg bg-amber-200/60 text-amber-800 flex items-center justify-center font-bold">醋</div>
+                        <div>
+                            <div class="font-bold text-slate-700 group-hover:text-amber-900">醋 (Vinegar)</div>
+                            <div class="text-[10px] text-slate-400">酸性透明液體</div>
+                        </div>
+                    </button>
+
+                    <button onclick="addReagent('bakingSoda')" class="p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 hover:border-slate-300 transition-all flex items-center gap-3 group text-left">
+                        <div class="w-8 h-8 rounded-lg bg-white border border-slate-300 text-slate-700 flex items-center justify-center font-bold shadow-xs">粉</div>
+                        <div>
+                            <div class="font-bold text-slate-700 group-hover:text-slate-900">小蘇打粉 (Baking Soda)</div>
+                            <div class="text-[10px] text-slate-400">白色沉積粉末</div>
+                        </div>
+                    </button>
+
+                    <button onclick="addReagent('h2o2')" class="p-2.5 rounded-xl border border-slate-200 bg-sky-50/50 hover:bg-sky-100/60 hover:border-sky-300 transition-all flex items-center gap-3 group text-left">
+                        <div class="w-8 h-8 rounded-lg bg-sky-200/60 text-sky-800 flex items-center justify-center font-bold">雙</div>
+                        <div>
+                            <div class="font-bold text-slate-700 group-hover:text-sky-900">雙氧水 (H₂O₂)</div>
+                            <div class="text-[10px] text-slate-400">氧化劑水溶液</div>
+                        </div>
+                    </button>
+
+                    <button onclick="addReagent('mno2')" class="p-2.5 rounded-xl border border-slate-200 bg-zinc-100 hover:bg-zinc-200 hover:border-zinc-400 transition-all flex items-center gap-3 group text-left">
+                        <div class="w-8 h-8 rounded-lg bg-zinc-800 text-zinc-100 flex items-center justify-center font-bold">錳</div>
+                        <div>
+                            <div class="font-bold text-slate-700 group-hover:text-zinc-900">二氧化錳 (MnO₂)</div>
+                            <div class="text-[10px] text-slate-400">黑色催化劑顆粒</div>
+                        </div>
+                    </button>
+
+                    <button onclick="addReagent('water')" class="p-2.5 rounded-xl border border-slate-200 bg-blue-50/40 hover:bg-blue-100/50 hover:border-blue-300 transition-all flex items-center gap-3 group text-left">
+                        <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold">水</div>
+                        <div>
+                            <div class="font-bold text-slate-700 group-hover:text-blue-900">純水 (Water)</div>
+                            <div class="text-[10px] text-slate-400">中性稀釋液</div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Equipment Tools Card -->
+            <div class="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm">
+                <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                    <i class="fa-solid fa-toolbox text-amber-500"></i> 實驗工具
+                </h2>
+                <div class="space-y-2">
+                    <button onclick="toggleLighter()" id="lighter-btn" class="w-full py-2.5 px-3 rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold text-xs flex items-center justify-center gap-2 transition-all">
+                        <i class="fa-solid fa-fire-flame-curved text-amber-500 text-base"></i>
+                        <span id="lighter-btn-text">點燃線香 (打火機)</span>
+                    </button>
+                    <p class="text-[11px] text-slate-400 text-center">💡 提示：點燃線香後，可用滑鼠拖曳線香伸入廣口瓶中測試。</p>
+                </div>
+            </div>
+
+            <!-- Current Jar Contents Badge -->
+            <div class="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 text-xs">
+                <span class="font-bold text-slate-600 block mb-1">🧪 廣口瓶內目前物質：</span>
+                <div id="jar-contents-list" class="text-slate-500 text-[11px] min-h-[30px] flex flex-wrap gap-1 items-center">
+                    <span class="text-slate-400 font-normal">（瓶內目前為空）</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- COLUMN 2: Central Stage & Interactive Gas Jar (6 Cols) -->
+        <section class="lg:col-span-6 flex flex-col items-center justify-between bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm relative overflow-hidden min-h-[580px]">
+            
+            <!-- Real-time Gas Sensor Bar Header -->
+            <div class="w-full grid grid-cols-3 gap-2 z-10">
+                <!-- CO2 Dashboard -->
+                <div class="bg-rose-50/80 border border-rose-200/80 rounded-xl p-2.5 text-center">
+                    <div class="text-[10px] font-bold text-rose-500 uppercase tracking-wide">二氧化碳 CO₂</div>
+                    <div id="sensor-co2" class="text-xl font-black text-rose-600 mt-0.5">0%</div>
+                </div>
+
+                <!-- O2 Dashboard -->
+                <div class="bg-amber-50/80 border border-amber-200/80 rounded-xl p-2.5 text-center">
+                    <div class="text-[10px] font-bold text-amber-600 uppercase tracking-wide">氧氣 O₂</div>
+                    <div id="sensor-o2" class="text-xl font-black text-amber-600 mt-0.5">21%</div>
+                </div>
+
+                <!-- N2/Air Dashboard -->
+                <div class="bg-slate-100/80 border border-slate-200/80 rounded-xl p-2.5 text-center">
+                    <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wide">背景空氣 / 氮氣</div>
+                    <div id="sensor-n2" class="text-xl font-black text-slate-600 mt-0.5">79%</div>
+                </div>
+            </div>
+
+            <!-- Central Stage Area (Jar + Incense) -->
+            <div class="relative w-full flex-1 flex items-center justify-center my-4">
+                
+                <!-- Floating Toast Alert Popup -->
+                <div id="toast-banner" class="absolute top-2 left-1/2 -translate-x-1/2 z-40 px-4 py-2 bg-slate-900/90 text-white font-bold text-xs rounded-full shadow-lg opacity-0 transition-all duration-300 pointer-events-none flex items-center gap-2">
+                    <i class="fa-solid fa-circle-check text-emerald-400"></i>
+                    <span id="toast-text">任務達成！</span>
+                </div>
+
+                <!-- Central Gas Jar Visual Component -->
+                <div id="jar-container" class="relative w-64 h-80 flex flex-col items-center justify-end group">
+                    
+                    <!-- Direct Clickable Glass Lid -->
+                    <div id="jar-lid" onclick="toggleJarLid()" class="w-44 h-7 rounded-t-xl bg-sky-200/80 border-2 border-sky-300/90 shadow-md cursor-pointer hover:bg-sky-300 transition-all flex items-center justify-center z-20 relative group/lid">
+                        <span id="lid-status-label" class="text-[10px] font-bold text-sky-800 pointer-events-none">蓋上玻蓋 (點擊取下)</span>
+                        <div class="absolute -top-3 w-12 h-3 bg-sky-300 rounded-t-md border-t border-x border-sky-400"></div>
+                    </div>
+
+                    <!-- Main Glass Body -->
+                    <div id="jar-body" class="w-60 h-72 rounded-b-3xl border-4 border-t-0 border-sky-200/80 glass-jar relative overflow-hidden flex flex-col justify-end transition-all duration-500">
+                        
+                        <!-- Gas Overlay Color Haze -->
+                        <div id="gas-overlay" class="absolute inset-0 pointer-events-none transition-all duration-700 opacity-0 bg-transparent"></div>
+
+                        <!-- Microscopic Canvas Layer -->
+                        <canvas id="micro-canvas" class="absolute inset-0 w-full h-full pointer-events-none z-10 opacity-0 transition-opacity duration-500"></canvas>
+
+                        <!-- Liquid Effervescence Bubbles Area -->
+                        <div id="bubble-container" class="absolute bottom-0 left-0 right-0 h-24 overflow-hidden pointer-events-none z-15"></div>
+
+                        <!-- Liquid Chemical Solution Layer -->
+                        <div id="liquid-layer" class="w-full h-0 bg-amber-100/40 border-t border-amber-200/60 transition-all duration-700 relative z-10"></div>
+
+                        <!-- Solid Sediment Powder Layers at Bottom -->
+                        <div class="w-full absolute bottom-0 left-0 right-0 z-10 pointer-events-none flex flex-col justify-end">
+                            <!-- White Powder (Baking Soda) -->
+                            <div id="sediment-white" class="w-full h-0 bg-slate-100/90 border-t border-slate-200/80 transition-all duration-500 shadow-inner"></div>
+                            <!-- Black Granules (MnO2) -->
+                            <div id="sediment-black" class="w-full h-0 bg-zinc-800/90 transition-all duration-500"></div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Draggable Incense Stick Tool -->
+                <div id="incense-stick" class="absolute right-6 top-12 w-4 h-64 cursor-grab active:cursor-grabbing z-30 touch-none flex flex-col items-center">
+                    
+                    <!-- Incense Tip / Flame Point -->
+                    <div id="incense-tip" class="w-2.5 h-3.5 rounded-t-full bg-slate-700 relative transition-all duration-300">
+                        <!-- Flame / Ember Glow Core -->
+                        <div id="flame-core" class="absolute inset-0 rounded-t-full opacity-0 bg-amber-500 transition-all duration-300"></div>
+                        <!-- Smoke Generator Container -->
+                        <div id="smoke-container" class="absolute -top-6 left-1/2 -translate-x-1/2 w-8 h-8 pointer-events-none opacity-0"></div>
+                        <!-- Flame Tag Alert Badge -->
+                        <div id="incense-alert-tag" class="absolute -left-16 -top-2 px-2 py-0.5 bg-slate-900/90 text-white font-bold text-[10px] rounded shadow-md whitespace-nowrap opacity-0 transition-opacity duration-300 pointer-events-none">
+                            已熄滅
+                        </div>
+                    </div>
+
+                    <!-- Wood Stick Body -->
+                    <div class="w-1.5 flex-1 bg-amber-800/90 rounded-b-sm border-x border-amber-900/40 shadow-sm"></div>
+                    <div class="text-[9px] font-bold text-slate-400 mt-1 pointer-events-none">線香 (拖曳)</div>
+                </div>
+
+            </div>
+
+            <!-- Bottom Jar Control Note -->
+            <div class="w-full text-center text-xs text-slate-400 border-t border-slate-100 pt-3">
+                <i class="fa-solid fa-hand-pointer text-sky-400 mr-1"></i> 直接點擊「玻蓋」可切換密封／敞開狀態。開啟玻蓋時，瓶內氣體將緩慢逸散。
+            </div>
+        </section>
+
+        <!-- COLUMN 3: Task Cards & Observation Log (3 Cols) -->
+        <section class="lg:col-span-3 flex flex-col gap-4">
+            
+            <!-- Three Structured Inquiry Task Cards -->
+            <div class="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm">
+                <div class="flex items-center justify-between mb-2.5">
+                    <h2 class="text-sm font-bold text-indigo-800 flex items-center gap-1.5">
+                        <i class="fa-solid fa-list-check"></i> 三個探究任務
+                    </h2>
+                    <span id="task-progress" class="text-xs px-2.5 py-0.5 bg-indigo-100 text-indigo-700 font-bold rounded-full border border-indigo-200">
+                        0/3 完成
+                    </span>
+                </div>
+
+                <div class="space-y-2.5 text-xs">
+                    <!-- Task 1 -->
+                    <div id="task1" class="p-3 rounded-xl border border-slate-200 bg-slate-50 transition-all duration-300">
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-slate-800">任務一：二氧化碳滅火</span>
+                            <span id="task1-badge" class="text-[10px] px-2 py-0.5 bg-slate-200 text-slate-600 font-bold rounded-full">
+                                ⏳ 進行中
+                            </span>
+                        </div>
+                        <p class="text-[11px] text-slate-500 mt-1">小蘇打＋醋 (CO₂≥40%)，將點燃線香伸入瓶內使其熄滅。</p>
+                    </div>
+
+                    <!-- Task 2 -->
+                    <div id="task2" class="p-3 rounded-xl border border-slate-200 bg-slate-50 transition-all duration-300">
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-slate-800">任務二：氧氣助燃復燃</span>
+                            <span id="task2-badge" class="text-[10px] px-2 py-0.5 bg-slate-200 text-slate-600 font-bold rounded-full">
+                                ⏳ 進行中
+                            </span>
+                        </div>
+                        <p class="text-[11px] text-slate-500 mt-1">雙氧水＋二氧化錳 (O₂≥40%)，將帶火星線香伸入瓶內劇烈復燃。</p>
+                    </div>
+
+                    <!-- Task 3 -->
+                    <div id="task3" class="p-3 rounded-xl border border-slate-200 bg-slate-50 transition-all duration-300">
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-slate-800">任務三：雙氧水＋小蘇打粉對照</span>
+                            <span id="task3-badge" class="text-[10px] px-2 py-0.5 bg-slate-200 text-slate-600 font-bold rounded-full">
+                                ⏳ 進行中
+                            </span>
+                        </div>
+                        <p class="text-[11px] text-slate-500 mt-1">在瓶中加入雙氧水與小蘇打粉，伸入線香觀察氣體產生與燃燒現象（思考：是否所有組合都會產生新氣體？）。</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Experiment Data Log & CSV Export Card -->
+            <div class="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm flex-1 flex flex-col">
+                <div class="flex items-center justify-between mb-2.5">
+                    <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-table text-emerald-500"></i> 數據與現象紀錄表
+                    </h2>
+                    <button onclick="recordDataLog()" class="px-2.5 py-1 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-[11px] rounded-lg shadow-sm transition-all flex items-center gap-1">
+                        <i class="fa-solid fa-pen-to-square"></i> 紀錄當前數據
+                    </button>
+                </div>
+
+                <!-- Log Table Container -->
+                <div class="flex-1 min-h-[140px] max-h-[220px] overflow-y-auto border border-slate-100 rounded-xl bg-slate-50/50 p-2">
+                    <table class="w-full text-left text-[11px]">
+                        <thead>
+                            <tr class="border-b border-slate-200 text-slate-400 text-[10px]">
+                                <th class="pb-1 font-bold">反應物</th>
+                                <th class="pb-1 font-bold">氣體濃度</th>
+                                <th class="pb-1 font-bold">線香現象</th>
+                            </tr>
+                        </thead>
+                        <tbody id="log-table-body" class="divide-y divide-slate-100">
+                            <!-- Dynamic log rows -->
+                            <tr id="empty-log-row">
+                                <td colspan="3" class="py-4 text-center text-slate-400 text-[10px]">尚未錄入數據，請點擊上方按鈕紀錄。</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Export CSV Button -->
+                <button onclick="exportCSV()" class="mt-3 w-full py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl shadow-sm transition-all flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-file-csv text-emerald-400 text-sm"></i> 匯出學習單 (CSV)
+                </button>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- APPLICATION JAVASCRIPT LOGIC -->
+    <script>
+        // Central Application State
+        const state = {
+            jar: {
+                lid: true,
+                reagents: { bakingSoda: false, vinegar: false, mno2: false, h2o2: false, water: false },
+                gas: { co2: 0, o2: 21, n2: 79 }
+            },
+            incense: {
+                ignited: false,
+                state: 'unlit', // 'unlit', 'ember', 'extinguished', 'flame'
+                coolingTimer: null
+            },
+            microView: false,
+            tasks: { task1: false, task2: false, task3: false },
+            logs: []
+        };
+
+        // DOM Element Cache
+        const incenseStick = document.getElementById('incense-stick');
+        const incenseTip = document.getElementById('incense-tip');
+        const flameCore = document.getElementById('flame-core');
+        const smokeContainer = document.getElementById('smoke-container');
+        const incenseAlertTag = document.getElementById('incense-alert-tag');
+        const microCanvas = document.getElementById('micro-canvas');
+        const ctx = microCanvas.getContext('2d');
+
+        // Initial setup on window load
+        window.onload = function() {
+            setupCanvasSize();
+            initIncenseDrag();
+            startGasDissipationLoop();
+            startMicroscopicParticleLoop();
+            updateGasDashboard();
+            renderJarContents();
+        };
+
+        window.onresize = setupCanvasSize;
+
+        function setupCanvasSize() {
+            const jarBody = document.getElementById('jar-body');
+            microCanvas.width = jarBody.clientWidth;
+            microCanvas.height = jarBody.clientHeight;
+        }
+
+        // =========================================================================
+        // REAGENT & JAR PHYSICS LOGIC
+        // =========================================================================
+
+        function addReagent(type) {
+            state.jar.reagents[type] = true;
+            triggerChemicalReaction();
+            renderJarContents();
+            checkTaskCompletion();
+        }
+
+        function triggerChemicalReaction() {
+            // Reaction 1: Baking Soda + Vinegar -> CO2
+            if (state.jar.reagents.bakingSoda && state.jar.reagents.vinegar) {
+                state.jar.gas.co2 = Math.min(100, state.jar.gas.co2 + 85);
+                state.jar.gas.o2 = Math.max(0, state.jar.gas.o2 - 20);
+                spawnLiquidBubbles();
+            }
+
+            // Reaction 2: MnO2 + H2O2 -> O2
+            if (state.jar.reagents.mno2 && state.jar.reagents.h2o2) {
+                state.jar.gas.o2 = Math.min(100, state.jar.gas.o2 + 80);
+                state.jar.gas.co2 = Math.max(0, state.jar.gas.co2 - 15);
+                spawnLiquidBubbles();
+            }
+
+            updateGasDashboard();
+            checkIncenseInJarReaction();
+            checkTaskCompletion();
+        }
+
+        function renderJarContents() {
+            const listElem = document.getElementById('jar-contents-list');
+            const liquidLayer = document.getElementById('liquid-layer');
+            const sedimentWhite = document.getElementById('sediment-white');
+            const sedimentBlack = document.getElementById('sediment-black');
+            const gasOverlay = document.getElementById('gas-overlay');
+
+            const active = [];
+            if (state.jar.reagents.vinegar) active.push('醋');
+            if (state.jar.reagents.bakingSoda) active.push('小蘇打粉');
+            if (state.jar.reagents.h2o2) active.push('雙氧水');
+            if (state.jar.reagents.mno2) active.push('二氧化錳');
+            if (state.jar.reagents.water) active.push('純水');
+
+            if (active.length === 0) {
+                listElem.innerHTML = '<span class="text-slate-400 font-normal">（瓶內目前為空）</span>';
+            } else {
+                listElem.innerHTML = active.map(item => `<span class="px-2 py-0.5 bg-slate-200 text-slate-700 font-bold rounded-md text-[10px]">${item}</span>`).join('');
+            }
+
+            // Liquid Level rendering
+            const hasLiquid = state.jar.reagents.vinegar || state.jar.reagents.h2o2 || state.jar.reagents.water;
+            liquidLayer.style.height = hasLiquid ? '80px' : '0px';
+
+            // Sediment layer rendering
+            sedimentWhite.style.height = state.jar.reagents.bakingSoda ? '14px' : '0px';
+            sedimentBlack.style.height = state.jar.reagents.mno2 ? '10px' : '0px';
+
+            // Gas visual haze overlay
+            if (state.jar.gas.co2 > 30) {
+                gasOverlay.className = 'absolute inset-0 pointer-events-none transition-all duration-700 bg-rose-500/10 glow-co2 opacity-100';
+            } else if (state.jar.gas.o2 > 35) {
+                gasOverlay.className = 'absolute inset-0 pointer-events-none transition-all duration-700 bg-amber-400/15 glow-o2 opacity-100';
+            } else {
+                gasOverlay.className = 'absolute inset-0 pointer-events-none transition-all duration-700 opacity-0 bg-transparent';
+            }
+        }
+
+        function spawnLiquidBubbles() {
+            const container = document.getElementById('bubble-container');
+            container.innerHTML = '';
+            for (let i = 0; i < 15; i++) {
+                const bubble = document.createElement('div');
+                bubble.className = 'bubble';
+                const size = Math.random() * 8 + 4;
+                bubble.style.width = `${size}px`;
+                bubble.style.height = `${size}px`;
+                bubble.style.left = `${Math.random() * 80 + 10}%`;
+                bubble.style.bottom = '0px';
+                bubble.style.animationDelay = `${Math.random() * 0.8}s`;
+                container.appendChild(bubble);
+            }
+        }
+
+        function updateGasDashboard() {
+            const co2 = Math.round(state.jar.gas.co2);
+            const o2 = Math.round(state.jar.gas.o2);
+            const n2 = Math.max(0, 100 - co2 - o2);
+            state.jar.gas.n2 = n2;
+
+            document.getElementById('sensor-co2').textContent = `${co2}%`;
+            document.getElementById('sensor-o2').textContent = `${o2}%`;
+            document.getElementById('sensor-n2').textContent = `${n2}%`;
+        }
+
+        function toggleJarLid() {
+            state.jar.lid = !state.jar.lid;
+            const lidElem = document.getElementById('jar-lid');
+            const labelElem = document.getElementById('lid-status-label');
+
+            if (state.jar.lid) {
+                lidElem.style.transform = 'translateY(0px)';
+                lidElem.className = 'w-44 h-7 rounded-t-xl bg-sky-200/80 border-2 border-sky-300/90 shadow-md cursor-pointer hover:bg-sky-300 transition-all flex items-center justify-center z-20 relative group/lid';
+                labelElem.textContent = '蓋上玻蓋 (點擊取下)';
+            } else {
+                lidElem.style.transform = 'translateY(-35px) rotate(-8deg)';
+                lidElem.className = 'w-44 h-7 rounded-t-xl bg-amber-100/90 border-2 border-amber-300/90 shadow-lg cursor-pointer hover:bg-amber-200 transition-all flex items-center justify-center z-20 relative group/lid';
+                labelElem.textContent = '已取下玻蓋 (點擊蓋上)';
+            }
+        }
+
+        function startGasDissipationLoop() {
+            setInterval(() => {
+                if (!state.jar.lid) {
+                    if (state.jar.gas.co2 > 0) {
+                        state.jar.gas.co2 = Math.max(0, state.jar.gas.co2 - 2);
+                    }
+                    if (state.jar.gas.o2 > 21) {
+                        state.jar.gas.o2 = Math.max(21, state.jar.gas.o2 - 2);
+                    } else if (state.jar.gas.o2 < 21) {
+                        state.jar.gas.o2 = Math.min(21, state.jar.gas.o2 + 1);
+                    }
+                    updateGasDashboard();
+                    renderJarContents();
+                }
+            }, 1000);
+        }
+
+        // =========================================================================
+        // INCENSE DRAG & FLAME PHYSICS LOGIC
+        // =========================================================================
+
+        function toggleLighter() {
+            if (state.incense.state === 'unlit' || state.incense.state === 'extinguished') {
+                state.incense.ignited = true;
+                state.incense.state = 'ember';
+                document.getElementById('lighter-btn-text').textContent = '熄滅線香';
+            } else {
+                state.incense.ignited = false;
+                state.incense.state = 'unlit';
+                document.getElementById('lighter-btn-text').textContent = '點燃線香 (打火機)';
+            }
+            renderIncenseVisuals();
+            checkIncenseInJarReaction();
+        }
+
+        function initIncenseDrag() {
+            let isDragging = false;
+            let startX, startY, initialLeft, initialTop;
+
+            const onStart = (e) => {
+                isDragging = true;
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                startX = clientX;
+                startY = clientY;
+                initialLeft = incenseStick.offsetLeft;
+                initialTop = incenseStick.offsetTop;
+            };
+
+            const onMove = (e) => {
+                if (!isDragging) return;
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                const dx = clientX - startX;
+                const dy = clientY - startY;
+
+                incenseStick.style.left = `${initialLeft + dx}px`;
+                incenseStick.style.top = `${initialTop + dy}px`;
+
+                checkIncenseInJarReaction();
+            };
+
+            const onEnd = () => { isDragging = false; };
+
+            incenseStick.addEventListener('mousedown', onStart);
+            window.addEventListener('mousemove', onMove);
+            window.addEventListener('mouseup', onEnd);
+
+            incenseStick.addEventListener('touchstart', onStart, { passive: true });
+            window.addEventListener('touchmove', onMove, { passive: true });
+            window.addEventListener('touchend', onEnd);
+        }
+
+        function checkIncenseInJarReaction() {
+            const tipRect = incenseTip.getBoundingClientRect();
+            const jarRect = document.getElementById('jar-body').getBoundingClientRect();
+
+            const insideJar = (tipRect.left >= jarRect.left && tipRect.right <= jarRect.right &&
+                               tipRect.top >= jarRect.top && tipRect.bottom <= jarRect.bottom);
+
+            if (insideJar) {
+                clearCoolingTimer();
+
+                if (state.incense.ignited || state.incense.state === 'ember' || state.incense.state === 'flame') {
+                    // CO2 >= 40% Extinction
+                    if (state.jar.gas.co2 >= 40) {
+                        state.incense.ignited = false;
+                        state.incense.state = 'extinguished';
+                        renderIncenseVisuals();
+                        completeTask('task1', '🎉 恭喜完成任務一：二氧化碳滅火！');
+                    } 
+                    // O2 >= 40% Rekindle / Flare Up
+                    else if (state.jar.gas.o2 >= 40) {
+                        state.incense.ignited = true;
+                        state.incense.state = 'flame';
+                        renderIncenseVisuals();
+                        completeTask('task2', '🎉 恭喜完成任務二：氧氣助燃復燃！');
+                    }
+                    // H2O2 + Baking Soda Control Reaction
+                    else if (state.jar.reagents.bakingSoda && state.jar.reagents.h2o2) {
+                        state.incense.state = 'ember';
+                        renderIncenseVisuals();
+                        completeTask('task3', '🎉 恭喜完成任務三：雙氧水與小蘇打粉對照實驗！');
+                    }
+                }
+            } else {
+                // Smooth 2.5s Cooling Transition when pulled out from O2 Jar back to room air
+                if (state.incense.state === 'flame' && !state.incense.coolingTimer) {
+                    startCoolingDownTransition();
+                }
+            }
+
+            checkTaskCompletion();
+        }
+
+        function startCoolingDownTransition() {
+            incenseAlertTag.textContent = '🔥 降溫中...';
+            incenseAlertTag.className = 'absolute -left-20 -top-2 px-2 py-0.5 bg-amber-600 text-white font-bold text-[10px] rounded shadow-md opacity-100';
+
+            state.incense.coolingTimer = setTimeout(() => {
+                state.incense.state = 'ember';
+                state.incense.coolingTimer = null;
+                renderIncenseVisuals();
+            }, 2500);
+        }
+
+        function clearCoolingTimer() {
+            if (state.incense.coolingTimer) {
+                clearTimeout(state.incense.coolingTimer);
+                state.incense.coolingTimer = null;
+            }
+        }
+
+        function renderIncenseVisuals() {
+            smokeContainer.innerHTML = '';
+
+            if (state.incense.state === 'unlit') {
+                flameCore.className = 'absolute inset-0 rounded-t-full opacity-0 bg-amber-500';
+                incenseTip.className = 'w-2.5 h-3.5 rounded-t-full bg-slate-700 relative';
+                incenseAlertTag.style.opacity = '0';
+            } 
+            else if (state.incense.state === 'ember') {
+                flameCore.className = 'absolute inset-0 rounded-t-full opacity-100 bg-amber-500 shadow-[0_0_10px_#f59e0b] animate-pulse';
+                incenseTip.className = 'w-2.5 h-3.5 rounded-t-full bg-amber-700 relative';
+                incenseAlertTag.textContent = '💡 帶火星燃燒';
+                incenseAlertTag.className = 'absolute -left-20 -top-2 px-2 py-0.5 bg-amber-600 text-white font-bold text-[10px] rounded shadow-md opacity-100';
+                spawnSmokeParticles(1);
+            } 
+            else if (state.incense.state === 'flame') {
+                flameCore.className = 'absolute -top-3 -left-1 -right-1 bottom-0 rounded-full opacity-100 bg-gradient-to-t from-amber-500 via-orange-400 to-yellow-200 shadow-[0_0_20px_#f59e0b] animate-bounce';
+                incenseTip.className = 'w-2.5 h-3.5 rounded-t-full bg-amber-600 relative';
+                incenseAlertTag.textContent = '🔥 劇烈復燃！';
+                incenseAlertTag.className = 'absolute -left-20 -top-2 px-2 py-0.5 bg-orange-600 text-white font-black text-[10px] rounded shadow-md opacity-100 animate-pulse';
+                spawnSmokeParticles(2);
+            } 
+            else if (state.incense.state === 'extinguished') {
+                flameCore.className = 'absolute inset-0 rounded-t-full opacity-0';
+                incenseTip.className = 'w-2.5 h-3.5 rounded-t-full bg-zinc-900 relative';
+                incenseAlertTag.textContent = '🛑 線香已熄滅！';
+                incenseAlertTag.className = 'absolute -left-24 -top-2 px-2 py-0.5 bg-rose-700 text-white font-bold text-[10px] rounded shadow-md opacity-100';
+                spawnSmokeParticles(3);
+            }
+        }
+
+        function spawnSmokeParticles(density) {
+            for (let i = 0; i < density; i++) {
+                const p = document.createElement('div');
+                p.className = 'smoke-particle';
+                const size = Math.random() * 6 + 4;
+                p.style.width = `${size}px`;
+                p.style.height = `${size}px`;
+                p.style.left = '50%';
+                p.style.bottom = '0px';
+                p.style.animationDelay = `${Math.random() * 0.5}s`;
+                smokeContainer.appendChild(p);
+            }
+            smokeContainer.style.opacity = '1';
+        }
+
+        // =========================================================================
+        // MICROSCOPIC MOLECULAR CANVAS SIMULATION
+        // =========================================================================
+
+        function toggleMicroView() {
+            state.microView = !state.microView;
+            const btnText = document.getElementById('micro-btn-text');
+            if (state.microView) {
+                microCanvas.style.opacity = '1';
+                btnText.textContent = '🔬 關閉微觀粒子視角';
+            } else {
+                microCanvas.style.opacity = '0';
+                btnText.textContent = '🔬 開啟微觀粒子視角';
+            }
+        }
+
+        // Particle System Pool
+        const particles = [];
+        for (let i = 0; i < 30; i++) {
+            particles.push({
+                x: Math.random() * 200 + 20,
+                y: Math.random() * 200 + 20,
+                vx: (Math.random() - 0.5) * 1.5,
+                vy: (Math.random() - 0.5) * 1.5,
+                type: 'N2'
+            });
+        }
+
+        function startMicroscopicParticleLoop() {
+            function updateAndDraw() {
+                if (state.microView) {
+                    ctx.clearRect(0, 0, microCanvas.width, microCanvas.height);
+
+                    // Sync particle counts with gas sensors
+                    const co2Ratio = state.jar.gas.co2 / 100;
+                    const o2Ratio = state.jar.gas.o2 / 100;
+
+                    particles.forEach((p, idx) => {
+                        p.x += p.vx;
+                        p.y += p.vy;
+
+                        if (p.x < 10 || p.x > microCanvas.width - 10) p.vx *= -1;
+                        if (p.y < 10 || p.y > microCanvas.height - 10) p.vy *= -1;
+
+                        if (idx < 30 * co2Ratio) {
+                            p.type = 'CO2';
+                        } else if (idx < 30 * (co2Ratio + o2Ratio)) {
+                            p.type = 'O2';
+                        } else {
+                            p.type = 'N2';
+                        }
+
+                        // Render molecule
+                        if (p.type === 'CO2') {
+                            // CO2: 1 Carbon (Black) + 2 Oxygens (Red)
+                            ctx.fillStyle = '#18181b';
+                            ctx.beginPath(); ctx.arc(p.x, p.y, 5, 0, Math.PI * 2); ctx.fill();
+                            ctx.fillStyle = '#ef4444';
+                            ctx.beginPath(); ctx.arc(p.x - 7, p.y, 4, 0, Math.PI * 2); ctx.fill();
+                            ctx.beginPath(); ctx.arc(p.x + 7, p.y, 4, 0, Math.PI * 2); ctx.fill();
+                        } else if (p.type === 'O2') {
+                            // O2: 2 Oxygens (Red)
+                            ctx.fillStyle = '#f97316';
+                            ctx.beginPath(); ctx.arc(p.x - 4, p.y, 4.5, 0, Math.PI * 2); ctx.fill();
+                            ctx.beginPath(); ctx.arc(p.x + 4, p.y, 4.5, 0, Math.PI * 2); ctx.fill();
+                        } else {
+                            // Background N2 Air
+                            ctx.fillStyle = '#94a3b8';
+                            ctx.beginPath(); ctx.arc(p.x, p.y, 3.5, 0, Math.PI * 2); ctx.fill();
+                        }
+                    });
+                }
+                requestAnimationFrame(updateAndDraw);
+            }
+            requestAnimationFrame(updateAndDraw);
+        }
+
+        // =========================================================================
+        // TASK EVALUATOR, DATA LOG & CSV EXPORT LOGIC
+        // =========================================================================
+
+        function checkTaskCompletion() {
+            const tipRect = incenseTip.getBoundingClientRect();
+            const jarRect = document.getElementById('jar-body').getBoundingClientRect();
+            const insideJar = (tipRect.left >= jarRect.left && tipRect.right <= jarRect.right &&
+                               tipRect.top >= jarRect.top && tipRect.bottom <= jarRect.bottom);
+
+            // Task 1: CO2 >= 40% & Incense inside
+            if (state.jar.gas.co2 >= 40 && insideJar) {
+                completeTask('task1', '🎉 恭喜完成任務一：二氧化碳滅火！');
+            }
+
+            // Task 2: O2 >= 40% & Incense inside
+            if (state.jar.gas.o2 >= 40 && insideJar) {
+                completeTask('task2', '🎉 恭喜完成任務二：氧氣助燃復燃！');
+            }
+
+            // Task 3: Baking Soda + H2O2 Control Test
+            if (state.jar.reagents.bakingSoda && state.jar.reagents.h2o2 && insideJar) {
+                completeTask('task3', '🎉 恭喜完成任務三：雙氧水與小蘇打粉對照實驗！');
+            }
+        }
+
+        function completeTask(taskId, toastMsg) {
+            if (!state.tasks[taskId]) {
+                state.tasks[taskId] = true;
+                const card = document.getElementById(taskId);
+                const badge = document.getElementById(`${taskId}-badge`);
+
+                if (card && badge) {
+                    card.className = 'p-3 rounded-xl border-2 border-emerald-500 bg-emerald-50 transition-all duration-300 shadow-md transform scale-102';
+                    badge.className = 'text-[10px] bg-emerald-600 text-white font-black px-2.5 py-0.5 rounded-full shadow-md animate-bounce';
+                    badge.textContent = '✅ 任務達成';
+                }
+
+                const completedCount = Object.values(state.tasks).filter(Boolean).length;
+                document.getElementById('task-progress').textContent = `${completedCount}/3 完成`;
+
+                showToastNotification(toastMsg || "🎉 恭喜達成探究任務！");
+            }
+        }
+
+        function showToastNotification(msg) {
+            const toast = document.getElementById('toast-banner');
+            document.getElementById('toast-text').textContent = msg;
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            toast.classList.add('opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('opacity-100');
+                toast.classList.add('opacity-0', 'pointer-events-none');
+            }, 3000);
+        }
+
+        function recordDataLog() {
+            const activeReagents = [];
+            if (state.jar.reagents.vinegar) activeReagents.push('醋');
+            if (state.jar.reagents.bakingSoda) activeReagents.push('小蘇打粉');
+            if (state.jar.reagents.h2o2) activeReagents.push('雙氧水');
+            if (state.jar.reagents.mno2) activeReagents.push('二氧化錳');
+            if (state.jar.reagents.water) activeReagents.push('純水');
+
+            const reagentText = activeReagents.length ? activeReagents.join('+') : '無添加';
+            const gasText = `CO₂:${Math.round(state.jar.gas.co2)}% / O₂:${Math.round(state.jar.gas.o2)}%`;
+
+            let incenseText = '未開啟';
+            if (state.incense.state === 'ember') incenseText = '帶火星微亮';
+            else if (state.incense.state === 'flame') incenseText = '劇烈復燃';
+            else if (state.incense.state === 'extinguished') incenseText = '快速熄滅';
+
+            const logEntry = {
+                reagents: reagentText,
+                gas: gasText,
+                incense: incenseText
+            };
+
+            state.logs.push(logEntry);
+            renderDataLogTable();
+        }
+
+        function renderDataLogTable() {
+            const tbody = document.getElementById('log-table-body');
+            if (state.logs.length === 0) {
+                tbody.innerHTML = '<tr id="empty-log-row"><td colspan="3" class="py-4 text-center text-slate-400 text-[10px]">尚未錄入數據，請點擊上方按鈕紀錄。</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = state.logs.map(log => `
+                <tr class="hover:bg-slate-100/60 transition-colors">
+                    <td class="py-1.5 font-bold text-slate-700">${log.reagents}</td>
+                    <td class="py-1.5 text-slate-600">${log.gas}</td>
+                    <td class="py-1.5 font-bold text-indigo-600">${log.incense}</td>
+                </tr>
+            `).join('');
+        }
+
+        function exportCSV() {
+            if (state.logs.length === 0) {
+                alert('目前無紀錄可匯出，請先點擊「紀錄當前數據」按鈕！');
+                return;
+            }
+
+            let csvContent = "\uFEFF反應物組合,瓶內氣體濃度,線香現象\n";
+            state.logs.forEach(row => {
+                csvContent += `"${row.reagents}","${row.gas}","${row.incense}"\n`;
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", `燃燒與氣體探究學習單_${new Date().toLocaleDateString()}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // =========================================================================
+        // WASH JAR & FACTORY RESET ROUTINES
+        // =========================================================================
+
+        function washJar() {
+            // Reset jar chemicals & gases only (preserve task progression & logs)
+            state.jar.reagents = { bakingSoda: false, vinegar: false, mno2: false, h2o2: false, water: false };
+            state.jar.gas = { co2: 0, o2: 21, n2: 79 };
+            
+            document.getElementById('bubble-container').innerHTML = '';
+            renderJarContents();
+            updateGasDashboard();
+            checkIncenseInJarReaction();
+            showToastNotification("🧼 已清洗廣口瓶！可以開始新的實驗測試。");
+        }
+
+        function resetLab() {
+            // Complete factory reset
+            washJar();
+
+            // Extinguish incense & reset position
+            state.incense.ignited = false;
+            state.incense.state = 'unlit';
+            clearCoolingTimer();
+            incenseStick.style.left = '';
+            incenseStick.style.top = '';
+            document.getElementById('lighter-btn-text').textContent = '點燃線香 (打火機)';
+            renderIncenseVisuals();
+
+            // Reset Lid to closed
+            state.jar.lid = true;
+            const lidElem = document.getElementById('jar-lid');
+            lidElem.style.transform = 'translateY(0px)';
+            document.getElementById('lid-status-label').textContent = '蓋上玻蓋 (點擊取下)';
+
+            // Reset Micro View
+            if (state.microView) toggleMicroView();
+
+            // Reset Tasks
+            state.tasks = { task1: false, task2: false, task3: false };
+            ['task1', 'task2', 'task3'].forEach(id => {
+                const card = document.getElementById(id);
+                const badge = document.getElementById(`${id}-badge`);
+                card.className = 'p-3 rounded-xl border border-slate-200 bg-slate-50 transition-all duration-300';
+                badge.className = 'text-[10px] px-2 py-0.5 bg-slate-200 text-slate-600 font-bold rounded-full';
+                badge.textContent = '⏳ 進行中';
+            });
+            document.getElementById('task-progress').textContent = '0/3 完成';
+
+            // Clear Data Logs
+            state.logs = [];
+            renderDataLogTable();
+
+            showToastNotification("🔄 實驗室已完整重製！");
+        }
+    </script>
+</body>
+</html>
